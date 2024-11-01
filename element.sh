@@ -6,24 +6,28 @@ if [[ -z $ARG ]]
 then
   echo "Please provide an element as an argument."
 else
-  PREFIX_QUERY="SELECT atomic_number, name, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius FROM properties 
-  INNER JOIN elements USING(atomic_number) INNER JOIN types USING(type_id)"
-  CONDITIONAL=""
+  RESULT=''
   if [[ $ARG =~ ^[0-9]+$ ]]
   then
-    CONDITIONAL="WHERE atomic_number=$ARG;"
+    RESULT=$($PSQL "SELECT atomic_number, name, symbol FROM elements WHERE atomic_number=$ARG;")
+    echo $RESULT | while IFS='|' read -r ATOMIC_NUMBER NAME SYMBOL
+    do
+      echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL)."
+    done
   elif [[ ${#ARG} -le 2 ]]
   then
-    CONDITIONAL="WHERE symbol='$ARG';"
-    echo "look for symbol"
+    RESULT=$($PSQL "SELECT type, atomic_mass FROM elements INNER JOIN properties USING(atomic_number) INNER JOIN types USING(type_id) 
+    WHERE symbol='$ARG';")
+    echo $RESULT | while IFS='|' read -r TYPE MASS
+    do
+      echo "It's a $TYPE, with a mass of $MASS amu."
+    done
   else
-    CONDITIONAL="WHERE name='$ARG';"
-    echo "look for name"
+    RESULT=$($PSQL "SELECT name, melting_point_celsius, boiling_point_celsius FROM elements INNER JOIN properties USING(atomic_number) 
+    WHERE name='$ARG';")
+    echo $RESULT | while IFS='|' read -r NAME MELTING_P BOILING_P
+    do
+      echo "$NAME has a melting point of $MELTING_P celsius and a boiling point of $BOILING_P celsius."
+    done
   fi
-  RESULT=$($PSQL "$PREFIX_QUERY $CONDITIONAL")
-  echo "$RESULT" | while IFS='|' read -r ATOMIC_NUMBER NAME SYMBOL TYPE ATOMIC_MASS MELTING_POINT BOILING_POINT
-  do
-    echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $ATOMIC_MASS amu. $NAME has a melting point of $MELTING_POINT celsius and a boiling point of $BOILING_POINT celsius."
-  done
-
 fi
