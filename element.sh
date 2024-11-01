@@ -18,12 +18,15 @@ else
   else
     CONDITIONAL="WHERE name='$ARG';"
   fi
+
   RESULT=$($PSQL "$PREFIX_QUERY $CONDITIONAL")
   if [[ -z $RESULT ]]
   then
     echo "I could not find that element in the database."
   else
-    echo "$RESULT" | IFS='|' read ATOMIC_NUMBER NAME SYMBOL TYPE ATOMIC_MASS MPC BPC
-    echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $ATOMIC_MASS amu. $NAME has a melting point of $MPC celsius and a boiling point of $BPC celsius."
+    echo "$RESULT" | while IFS='|' read -r ATOMIC_NUMBER NAME SYMBOL TYPE ATOMIC_MASS MPC BPC
+    do
+      echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $ATOMIC_MASS amu. $NAME has a melting point of $MPC celsius and a boiling point of $BPC celsius."
+    done
   fi
 fi
